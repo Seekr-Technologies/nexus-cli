@@ -1,7 +1,8 @@
 name: RELEASE
 on:
   push:
-    branches: ["master"]
+    tags:
+      - "v*.*.*"
 
 concurrency:
   group: release_environment
@@ -9,6 +10,8 @@ concurrency:
 jobs:
   build-nexus-cli:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
@@ -33,6 +36,7 @@ jobs:
 
       - name: Upload Release Assets
         uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
         with:
           files: dist/*
 

@@ -1,5 +1,3 @@
-[![CircleCI](https://circleci.com/gh/mlabouardy/nexus-cli.svg?style=svg)](https://circleci.com/gh/mlabouardy/nexus-cli) [![MIT License](http://img.shields.io/badge/license-MIT-blue.svg?style=flat)](LICENSE)
-
 <div align="center">
 <img src="logo.png" width="60%"/>
 </div>
@@ -12,77 +10,58 @@ Nexus CLI for Docker Registry
 <img src="example.png"/>
 </div>
 
-## Download
+## Getting started
 
-Below are the available downloads for the latest version of Nexus CLI (1.0.0-beta). Please download the proper package for your operating system and architecture.
+To run `nexus-cli` download the [latest release](https://github.com/Seekr-Technologies/nexus-cli/releases/latest) distribution.
 
-### Linux:
+## Building from Source
 
-```
-wget https://s3.eu-west-2.amazonaws.com/nexus-cli/1.0.0-beta/linux/nexus-cli
-```
-
-### Windows:
+Build the binary using `make`:
 
 ```
-wget https://s3.eu-west-2.amazonaws.com/nexus-cli/1.0.0-beta/windows/nexus-cli
+make build
 ```
 
-### Mac OS X:
+## Configure
 
-```
-wget https://s3.eu-west-2.amazonaws.com/nexus-cli/1.0.0-beta/osx/nexus-cli
-```
+For configure `nexus-cli` use `nexus-cli configure`.
 
-### OpenBSD:
-
-```
-wget https://s3.eu-west-2.amazonaws.com/nexus-cli/1.0.0-beta/openbsd/nexus-cli
-```
-
-### FreeBSD:
-
-```
-wget https://s3.eu-west-2.amazonaws.com/nexus-cli/1.0.0-beta/freebsd/nexus-cli
-```
-
-## Installation
-
-To install the library and command line program, use the following:
-
-```
-go get -u github.com/mlabouardy/nexus-cli
-```
+⚠️ Important: For the `Enter Nexus Host` question type your Nexus host with *web port*. Typically, Nexus run on port `8081`.  
 
 ## Available Commands
 
 ```
-$ nexus-cli configure
+nexus-cli configure
 ```
 
 ```
-$ nexus-cli image ls
+nexus-cli image ls
 ```
 
 ```
-$ nexus-cli image tags -name mlabouardy/nginx
+nexus-cli image tags -name mlabouardy/nginx
 ```
 
 ```
-$ nexus-cli image info -name mlabouardy/nginx -tag 1.2.0
+nexus-cli image info -name mlabouardy/nginx -tag 1.2.0
 ```
 
 ```
-$ nexus-cli image delete -name mlabouardy/nginx -tag 1.2.0
+nexus-cli image delete -name mlabouardy/nginx -tag 1.2.0
 ```
 
 ```
-$ nexus-cli image delete -name mlabouardy/nginx -keep 4
+nexus-cli image delete -name mlabouardy/nginx -keep 4
 ```
 
 ```
-$ nexus-cli image size -name mlabouardy/nginx
+nexus-cli image size -name mlabouardy/nginx
 ```
+
 ## Tutorials
 
 * [Cleanup old Docker images from Nexus Repository](http://www.blog.labouardy.com/cleanup-old-docker-images-from-nexus-repository/)
+
+## License
+
+* [MIT License](LICENSE)

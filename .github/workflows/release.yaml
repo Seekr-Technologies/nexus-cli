@@ -1,0 +1,41 @@
+name: RELEASE
+on:
+  push:
+    branches: ["master"]
+
+concurrency:
+  group: release_environment
+
+jobs:
+  build-nexus-cli:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '^1.17.1'
+      - run: go version
+
+      - name: Build
+        shell: bash
+        run: |
+          make build
+          make fmt
+          make vet
+          make lint
+
+      - name: Release
+        shell: bash
+        run: |
+          make release
+
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/*
+
+
+

@@ -25,7 +25,6 @@ jobs:
           make build
           make fmt
           make vet
-          make lint
 
       - name: Release
         shell: bash

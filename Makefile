@@ -22,13 +22,6 @@ fmt:
 vet:
 	$(GO) vet $(PACKAGES)
 
-.PHONY: lint
-lint:
-	@which golint > /dev/null; if [ $$? -ne 0 ]; then \
-		$(GO) install golang.org/x/lint/golint@latest; \
-	fi
-	for PKG in $(PACKAGES); do golint -set_exit_status $$PKG || exit 1; done;
-
 .PHONY: dep
 dep:
 	$(GO) mod vendor

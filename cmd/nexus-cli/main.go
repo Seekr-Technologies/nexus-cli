@@ -55,6 +55,10 @@ func main() {
 			Name:  "Alexandr Zaytsev",
 			Email: "13rentgen@gmail.com",
 		},
+		{
+			Name:  "Paul Sladek",
+			Email: "psladek@seekr.com",
+		},
 	}
 	app.Commands = []cli.Command{
 		{
@@ -224,10 +228,9 @@ func listTagsByImage(c *cli.Context) error {
 	sort.Sort(sortedTags)
 
 	for _, tag := range sortedTags {
-		fmt.Printf("%s created at %s\n", tag.Tag, tag.Date)
+		fmt.Println(tag.Tag)
 	}
-
-	fmt.Printf("There are %d images for %s\n", len(tags), imgName)
+	fmt.Printf("There are %d images for %s\n", len(sortedTags), imgName)
 	return nil
 }
 

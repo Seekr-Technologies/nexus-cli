@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"html/template"
 	"os"
-	"sort"
-	"time"
 
 	"github.com/Seekr-Technologies/nexus-cli/internal/pkg/registry"
 	"github.com/urfave/cli"
@@ -19,43 +17,19 @@ nexus_password = "{{ .Password }}"
 nexus_repository = "{{ .Repository }}"`
 )
 
-// Version current package version
-var Version string
-
-type tagDate struct {
-	Tag  string
-	Date time.Time
-}
-
-type tagsAndDate []tagDate
-
-func (p tagsAndDate) Len() int {
-	return len(p)
-}
-
-func (p tagsAndDate) Less(i, j int) bool {
-	return p[i].Date.Before(p[j].Date)
-}
-
-func (p tagsAndDate) Swap(i, j int) {
-	p[i], p[j] = p[j], p[i]
-}
-
 func main() {
 	app := cli.NewApp()
 	app.Name = "Nexus CLI"
 	app.Usage = "Manage Docker Private Registry on Nexus"
-	app.Version = Version
+	app.Version = "1.0.1"
 	app.Authors = []cli.Author{
 		{
 			Name:  "Mohamed Labouardy",
 			Email: "mohamed@labouardy.com",
-		},
-		{
+		}, {
 			Name:  "Alexandr Zaytsev",
 			Email: "13rentgen@gmail.com",
-		},
-		{
+		}, {
 			Name:  "Paul Sladek",
 			Email: "psladek@seekr.com",
 		},
@@ -90,6 +64,21 @@ func main() {
 					},
 					Action: func(c *cli.Context) error {
 						return listTagsByImage(c)
+					},
+				},
+				{
+					Name:  "sha",
+					Usage: "Show image sha",
+					Flags: []cli.Flag{
+						cli.StringFlag{
+							Name: "name, n",
+						},
+						cli.StringFlag{
+							Name: "tag, t",
+						},
+					},
+					Action: func(c *cli.Context) error {
+						return showImageSha(c)
 					},
 				},
 				{
@@ -213,24 +202,39 @@ func listTagsByImage(c *cli.Context) error {
 	}
 	tags, err := r.ListTagsByImage(imgName)
 
-	sortedTags := make(tagsAndDate, 0, len(tags))
+	compareStringNumber := func(str1, str2 string) bool {
+		return extractNumberFromString(str1) < extractNumberFromString(str2)
+	}
+	Compare(compareStringNumber).Sort(tags)
 
+	if err != nil {
+		return cli.NewExitError(err.Error(), 1)
+	}
 	for _, tag := range tags {
-		date, err := r.GetImageTagDate(imgName, tag)
+		fmt.Println(tag)
+	}
+	fmt.Printf("There are %d images for %s\n", len(tags), imgName)
+	return nil
+}
 
-		if err != nil {
-			return cli.NewExitError(err.Error(), 1)
-		}
-
-		sortedTags = append(sortedTags, tagDate{Date: date, Tag: tag})
+func showImageSha(c *cli.Context) error {
+	var imgName = c.String("name")
+	var tag = c.String("tag")
+	r, err := registry.NewRegistry()
+	if err != nil {
+		return cli.NewExitError(err.Error(), 1)
+	}
+	if imgName == "" || tag == "" {
+		cli.ShowSubcommandHelp(c)
 	}
 
-	sort.Sort(sortedTags)
-
-	for _, tag := range sortedTags {
-		fmt.Println(tag.Tag)
+	sha, err := r.GetImageSHA(imgName, tag)
+	if err != nil {
+		return cli.NewExitError(err.Error(), 1)
 	}
-	fmt.Printf("There are %d images for %s\n", len(sortedTags), imgName)
+
+	fmt.Printf("%s\n", sha)
+
 	return nil
 }
 
@@ -264,59 +268,40 @@ func deleteImage(c *cli.Context) error {
 	if imgName == "" {
 		fmt.Fprintf(c.App.Writer, "You should specify the image name\n")
 		cli.ShowSubcommandHelp(c)
-
-		return nil
-	}
-
-	r, err := registry.NewRegistry()
-	if err != nil {
-		return cli.NewExitError(err.Error(), 1)
-	}
-	if tag == "" {
-		if keep == 0 {
-			fmt.Fprintf(c.App.Writer, "You should either specify the tag or how many images you want to keep\n")
-			cli.ShowSubcommandHelp(c)
-
-			return nil
-		}
-
-		tags, err := r.ListTagsByImage(imgName)
+	} else {
+		r, err := registry.NewRegistry()
 		if err != nil {
 			return cli.NewExitError(err.Error(), 1)
 		}
-
-		if len(tags) <= keep {
-			fmt.Printf("Only %d images are available\n", len(tags))
-			return nil
-		}
-
-		sortedTags := make(tagsAndDate, 0, len(tags))
-
-		for _, tag := range tags {
-			date, err := r.GetImageTagDate(imgName, tag)
-
+		if tag == "" {
+			if keep == 0 {
+				fmt.Fprintf(c.App.Writer, "You should either specify the tag or how many images you want to keep\n")
+				cli.ShowSubcommandHelp(c)
+			} else {
+				tags, err := r.ListTagsByImage(imgName)
+				compareStringNumber := func(str1, str2 string) bool {
+					return extractNumberFromString(str1) < extractNumberFromString(str2)
+				}
+				Compare(compareStringNumber).Sort(tags)
+				if err != nil {
+					return cli.NewExitError(err.Error(), 1)
+				}
+				if len(tags) >= keep {
+					for _, tag := range tags[:len(tags)-keep] {
+						fmt.Printf("%s:%s image will be deleted ...\n", imgName, tag)
+						r.DeleteImageByTag(imgName, tag)
+					}
+				} else {
+					fmt.Printf("Only %d images are available\n", len(tags))
+				}
+			}
+		} else {
+			err = r.DeleteImageByTag(imgName, tag)
 			if err != nil {
 				return cli.NewExitError(err.Error(), 1)
 			}
-
-			sortedTags = append(sortedTags, tagDate{Date: date, Tag: tag})
 		}
-
-		sort.Sort(sortedTags)
-
-		for _, tag := range sortedTags[:len(tags)-keep] {
-			fmt.Printf("%s:%s image will be deleted ...\n", imgName, tag.Tag)
-			r.DeleteImageByTag(imgName, tag.Tag)
-		}
-
-		return nil
 	}
-
-	err = r.DeleteImageByTag(imgName, tag)
-	if err != nil {
-		return cli.NewExitError(err.Error(), 1)
-	}
-
 	return nil
 }
 
@@ -337,22 +322,23 @@ func showTotalImageSize(c *cli.Context) error {
 			return cli.NewExitError(err.Error(), 1)
 		}
 
+		sizeInfo := make(map[string]int64)
+
 		for _, tag := range tags {
 			manifest, err := r.ImageManifest(imgName, tag)
 			if err != nil {
 				return cli.NewExitError(err.Error(), 1)
 			}
 
-			sizeInfo := make(map[string]int64)
-
 			for _, layer := range manifest.Layers {
 				sizeInfo[layer.Digest] = layer.Size
 			}
 
-			for _, size := range sizeInfo {
-				totalSize += size
-			}
 		}
+		for _, size := range sizeInfo {
+			totalSize += size
+		}
+
 		fmt.Printf("%d %s\n", totalSize, imgName)
 	}
 	return nil

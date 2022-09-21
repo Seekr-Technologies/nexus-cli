@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"time"
 
 	"github.com/BurntSushi/toml"
 )
@@ -143,6 +142,31 @@ func (r Registry) ListTagsByImage(image string) ([]string, error) {
 	return imageTags.Tags, nil
 }
 
+func (r Registry) GetImageSHA(image string, tag string) (string, error) {
+	client := &http.Client{}
+
+	url := fmt.Sprintf("%s/repository/%s/v2/%s/manifests/%s", r.Host, r.Repository, image, tag)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return "", err
+	}
+	req.SetBasicAuth(r.Username, r.Password)
+	req.Header.Add("Accept", acceptHeader)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return "", fmt.Errorf("HTTP Code: %d, Failed to fetch image sha", resp.StatusCode)
+	}
+
+	return resp.Header.Get("docker-content-digest"), nil
+}
+
 // ImageManifest : get docker image manifest from registry
 func (r Registry) ImageManifest(image string, tag string) (ImageManifest, error) {
 	var imageManifest ImageManifest
@@ -243,62 +267,4 @@ func (r Registry) SearchAssets(image string, tag string) (SearchAssets, error) {
 	json.NewDecoder(resp.Body).Decode(&searchAsset)
 
 	return searchAsset, nil
-}
-
-func (r Registry) getImageSHA(image string, tag string) (string, error) {
-	client := &http.Client{}
-
-	url := fmt.Sprintf("%s/repository/%s/v2/%s/manifests/%s", r.Host, r.Repository, image, tag)
-
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		fmt.Print("Can't even find the sha")
-		return "", err
-	}
-	req.SetBasicAuth(r.Username, r.Password)
-	req.Header.Add("Accept", acceptHeader)
-
-	resp, err := client.Do(req)
-	if err != nil {
-		fmt.Print("Can't even find the sha")
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return "", fmt.Errorf("HTTP Code: %d, Failed to fetch image sha", resp.StatusCode)
-	}
-
-	return resp.Header.Get("docker-content-digest"), nil
-}
-
-// GetImageTagDate : get last modified date for the image tag
-func (r Registry) GetImageTagDate(image string, tag string) (time.Time, error) {
-	client := &http.Client{}
-
-	url := fmt.Sprintf("%s/repository/%s/v2/%s/manifests/%s", r.Host, r.Repository, image, tag)
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return time.Now(), err
-	}
-	req.SetBasicAuth(r.Username, r.Password)
-	req.Header.Add("Accept", acceptHeader)
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return time.Now(), err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return time.Now(), fmt.Errorf("HTTP Code: %d", resp.StatusCode)
-	}
-
-	t, err := time.Parse(time.RFC1123, resp.Header.Get("last-modified"))
-
-	if err != nil {
-		return time.Now(), err
-	}
-
-	return t, nil
 }

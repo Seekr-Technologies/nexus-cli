@@ -35,4 +35,4 @@ release:
 	@which gox > /dev/null; if [ $$? -ne 0 ]; then \
 		$(GO) install github.com/mitchellh/gox@v1.0.1; \
 	fi
-	CGO_ENABLED=0 gox -arch="amd64 arm" -verbose -ldflags '-w $(LDFLAGS)' -output="dist/$(EXECUTABLE)-${GITHUB_TAG}-{{.OS}}-{{.Arch}}" ./cmd/nexus-cli
+	CGO_ENABLED=0 gox -arch="amd64" -verbose -ldflags '-w $(LDFLAGS)' -output="dist/$(EXECUTABLE)-${GITHUB_TAG}-{{.OS}}-{{.Arch}}" ./cmd/nexus-cli

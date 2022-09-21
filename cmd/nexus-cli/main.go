@@ -21,7 +21,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "Nexus CLI"
 	app.Usage = "Manage Docker Private Registry on Nexus"
-	app.Version = "1.0.1"
+	app.Version = "v1.0.3"
 	app.Authors = []cli.Author{
 		{
 			Name:  "Mohamed Labouardy",
@@ -35,6 +35,14 @@ func main() {
 		},
 	}
 	app.Commands = []cli.Command{
+		{
+			Name:  "version",
+			Usage: "Print Cli Version",
+			Action: func(c *cli.Context) error {
+				fmt.Printf(app.Version)
+				return nil
+			},
+		},
 		{
 			Name:  "configure",
 			Usage: "Configure Nexus Credentials",
